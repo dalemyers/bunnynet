@@ -1,0 +1,7 @@
+**/__pycache__/**
+**/.mypy_cache/**
+bunnynet.egg-info
+dist
+venv
+**/.pytest_cache/**
+.env

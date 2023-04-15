@@ -1,0 +1,62 @@
+[tool.poetry]
+name = "bunnynet"
+version = "0.1.0"
+description = "A client for the bunny.net APIs"
+
+license = "MIT"
+
+authors = [
+    "Dale Myers <dale@myers.io>"
+]
+
+readme = 'README.md'
+
+repository = "https://github.com/dalemyers/bunnynet"
+homepage = "https://github.com/dalemyers/bunnynet"
+
+keywords = ['bunny', 'bunny.net', 'cdn']
+
+classifiers = [
+    'Development Status :: 3 - Alpha',
+    'Environment :: Console',
+    'Intended Audience :: Developers',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Topic :: Software Development',
+    'Topic :: Utilities'
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+deserialize = "^2.0.1"
+requests = "^2.28.2"
+tenacity = "^8.2.2"
+
+[tool.poetry.group.dev.dependencies]
+bandit = "1.7.5"
+black = "23.3.0"
+isort = "5.12.0"
+mypy = "1.2.0"
+pylint = "2.17.1"
+pytest = "^7.3.0"
+pytest-cov = "^4.0.0"
+python-dotenv = "^0.21.0"
+types-requests = "^2.28.11.17"
+
+[[tool.mypy.overrides]]
+module = [
+    "deserialize"
+]
+ignore_missing_imports = true
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.bandit.assert_used]
+skips = ['*_test.py', '*/test_*.py', '*/conftest.py']
+
+[tool.isort]
+# make it compatible with black
+profile = "black" 

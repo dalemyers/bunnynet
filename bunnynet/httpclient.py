@@ -8,7 +8,6 @@ import deserialize
 import requests
 
 from bunnynet.exceptions import BunnyHTTPException
-from bunnynet.storage_endpoints import StorageEndpoint
 
 BASE_URL = "api.bunny.net"
 
@@ -43,7 +42,7 @@ class HttpClient:
         _ = self
 
         if not response.ok:
-            raise BunnyHTTPException(response)
+            raise BunnyHTTPException.generate_from_response(response)
 
         return response.json()
 
@@ -81,7 +80,7 @@ class HttpClient:
             if attempts > 1 and (raw_response.status_code >= 500):
                 return self.get_raw(endpoint, attempts=attempts - 1)
 
-            raise BunnyHTTPException(raw_response, "Failed to get data")
+            raise BunnyHTTPException.generate_from_response(raw_response, "Failed to get data")
 
         return raw_response.content
 

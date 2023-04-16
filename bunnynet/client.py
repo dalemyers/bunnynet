@@ -159,3 +159,14 @@ class BunnyClient:
         )
 
         return parsed_url.scheme + "://" + parsed_url.netloc + parsed_url.path + "?" + urllib.parse.urlencode(signature)
+
+    def purge_url(self, url: str, *, wait: bool = True) -> None:
+        """Purge a URL from the cache.
+
+        :param url: The URL to purge from the CDN cache
+        :param wait: Set to false to enable an async purge
+        """
+
+        _ = self._http_client.get_raw(
+            "purge?url=" + urllib.parse.quote(url) + "&async=" + ("false" if wait else "true")
+        )

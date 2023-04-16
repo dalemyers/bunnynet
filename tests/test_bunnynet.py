@@ -7,6 +7,7 @@ import uuid
 
 import dotenv
 import pytest
+import requests
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.abspath(__file__), "..", "..")))
 import bunnynet  # pylint: disable=wrong-import-order
@@ -137,3 +138,49 @@ def test_get_logs(client: bunnynet.BunnyClient):
         start_index=0,
         end_index=10000,
     )
+
+
+def test_purge_url(client: bunnynet.BunnyClient):
+    """Test purging a file."""
+
+    storage_zone = list(client.storage_zones.get_all())[0]
+    name = str(uuid.uuid4()) + ".json"
+
+    client.storage_zones.upload_text_file(
+        storage_zone_name=storage_zone.name or "",
+        contents="Hello World",
+        path="client_id/project_id/environment_id",
+        file_name=name,
+    )
+
+    assert storage_zone.pull_zones is not None
+    pull_zone = storage_zone.pull_zones[0]
+
+    url = (
+        "https://"
+        + (pull_zone.name or "")
+        + "."
+        + (pull_zone.cname_domain or "")
+        + f"/client_id/project_id/environment_id/{name}"
+    )
+
+    contents = requests.get(url, timeout=10).text
+
+    assert contents == "Hello World"
+
+    client.storage_zones.upload_text_file(
+        storage_zone_name=storage_zone.name or "",
+        contents="Something else",
+        path="client_id/project_id/environment_id",
+        file_name=name,
+    )
+
+    contents = requests.get(url, timeout=10).text
+
+    assert contents == "Hello World"
+
+    client.purge_url(url)
+
+    contents = requests.get(url, timeout=10).text
+
+    assert contents == "Something else"

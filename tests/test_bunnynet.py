@@ -103,8 +103,32 @@ def test_delete_file(client: bunnynet.BunnyClient):
     )
 
 
+def test_get_file(client: bunnynet.BunnyClient):
+    """Test getting a file."""
+
+    storage_zone = list(client.storage_zones.get_all())[0]
+    name = str(uuid.uuid4()) + ".json"
+
+    client.storage_zones.upload_text_file(
+        storage_zone_name=storage_zone.name or "",
+        contents="Hello World",
+        path="client_id/project_id/environment_id",
+        file_name=name,
+    )
+
+    data = client.storage_zones.get_text_file(
+        storage_zone_name=storage_zone.name or "",
+        path="client_id/project_id/environment_id",
+        file_name=name,
+    )
+
+    print(data)
+
+
 def test_get_logs(client: bunnynet.BunnyClient):
     """Test getting the logs a file."""
+
+    # TODO: Get from file storage
 
     client.logs.get(
         pull_zone_id=1330830,

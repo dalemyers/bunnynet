@@ -67,4 +67,4 @@ class LogClient:
             + str(end_index)
         )
 
-        return self.http_client.get_raw(endpoint, domain="logging.bunnycdn.com")
+        return self.http_client.get_raw(endpoint, domain="logging.bunnycdn.com").decode("utf-8")

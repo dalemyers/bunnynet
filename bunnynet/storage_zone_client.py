@@ -205,3 +205,32 @@ class StorageZoneClient:
             domain=StorageEndpoint.from_name(storage_zone.region or "").value,
             access_key=storage_zone.password,
         )
+
+    def get_text_file(
+        self,
+        *,
+        storage_zone_name: str | None = None,
+        storage_zone: StorageZone | None = None,
+        path: str,
+        file_name: str,
+    ) -> str:
+        """Get a text file.
+
+        Either the storage zone or the storage zone name must be provided. The
+        former will be used in the case where both are provided.
+
+        :param storage_zone_name: The name of the storage zone to get the file from
+        :param storage_zone: The storage zone to get the file from
+        :param path: The path of the file
+        :param file_name: The name of the file
+
+        :returns: The text from the file
+        """
+
+        storage_zone = self._resolve_storage_zone(storage_zone_name=storage_zone_name, storage_zone=storage_zone)
+
+        return self.http_client.get_raw(
+            endpoint=f"{storage_zone.name}/{path}/{file_name}",
+            domain=StorageEndpoint.from_name(storage_zone.region or "").value,
+            access_key=storage_zone.password,
+        ).decode("utf-8")

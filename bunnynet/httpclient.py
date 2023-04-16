@@ -53,12 +53,14 @@ class HttpClient:
         *,
         attempts: int = 3,
         domain: str = BASE_URL,
-    ) -> str:
+        access_key: str | None = None,
+    ) -> bytes:
         """Perform a GET to the endpoint specified.
 
         :param endpoint: The endpoint to perform the GET on
         :param attempts: Number of attempts remaining to try this call
         :param domain: Override the domain to something else
+        :param access_key: The access key to use instead of the default
 
         :raises BunnyHTTPException: If something goes wrong in a call
 
@@ -70,7 +72,7 @@ class HttpClient:
         raw_response = requests.get(
             url,
             headers={
-                "AccessKey": self._token,
+                "AccessKey": access_key or self._token,
             },
             timeout=10,
         )
@@ -81,7 +83,7 @@ class HttpClient:
 
             raise BunnyHTTPException(raw_response, "Failed to get data")
 
-        return raw_response.text
+        return raw_response.content
 
     def get(
         self,
@@ -90,6 +92,7 @@ class HttpClient:
         *,
         attempts: int = 3,
         domain: str = BASE_URL,
+        access_key: str | None = None,
     ) -> T:
         """Perform a GET to the endpoint specified.
 
@@ -97,6 +100,7 @@ class HttpClient:
         :param response_type: The type of item the response contains
         :param attempts: Number of attempts remaining to try this call
         :param domain: Override the domain to something else
+        :param access_key: The access key to use instead of the default
 
         :raises BunnyHTTPException: If something goes wrong in a call
 
@@ -108,7 +112,7 @@ class HttpClient:
         raw_response = requests.get(
             url,
             headers={
-                "AccessKey": self._token,
+                "AccessKey": access_key or self._token,
             },
             timeout=10,
         )

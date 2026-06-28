@@ -68,6 +68,14 @@ class BunnyClient:
 
         return StorageZoneClient(http_client=http_client, log=log)
 
+    def get_pull_zone_client(self) -> PullZoneClient:
+        """Get a client for the pull zone APIs.
+
+        :returns: A pull zone client backed by this client's HTTP client.
+        """
+
+        return PullZoneClient(http_client=self._http_client, log=self.log)
+
     def generate_url_signature(
         self,
         url: str,

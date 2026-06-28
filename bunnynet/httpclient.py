@@ -44,6 +44,11 @@ class HttpClient:
         if not response.ok:
             raise BunnyHTTPException.generate_from_response(response)
 
+        # Some write endpoints (e.g. a 201/204 on POST) return an empty body.
+        # response.json() would raise on those, so treat an empty body as no data.
+        if not response.content:
+            return None
+
         return response.json()
 
     def get_raw(
@@ -266,11 +271,75 @@ class HttpClient:
 
         return cast(T, deserialize.deserialize(response_type, response_data))
 
+    def post(
+        self,
+        endpoint: str,
+        response_type: Type[T],
+        body: dict[str, Any] | None = None,
+        *,
+        additional_headers: dict[str, Any] | None = None,
+        attempts: int = 3,
+        domain: str = BASE_URL,
+        access_key: str | None = None,
+    ) -> T:
+        """Perform a POST to the endpoint specified.
+
+        Unlike :meth:`put`, the body is JSON-encoded since the bunny.net write
+        endpoints expect a JSON document.
+
+        :param endpoint: The endpoint to perform the POST to
+        :param response_type: The type of item the response contains. Pass `object` if the body is empty or unused.
+        :param body: The JSON-serialisable body to send
+        :param additional_headers: Any additional headers to add to the call
+        :param attempts: Number of attempts remaining to try this call
+        :param domain: Override the domain to something else
+        :param access_key: The access key to use instead of the default
+
+        :raises BunnyHTTPException: If something goes wrong in a call
+
+        :returns: The response deserialized and cast to the passed in `response_type`
+        """
+
+        url = "https://" + domain + "/" + endpoint
+
+        headers = {
+            "AccessKey": access_key or self._token,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+
+        if additional_headers:
+            headers |= additional_headers
+
+        raw_response = requests.post(url, json=body, headers=headers, timeout=10)
+
+        try:
+            response_data = self.extract_data(raw_response)
+        except BunnyHTTPException as ex:
+            if attempts > 1 and (ex.response.status_code >= 500):
+                return self.post(
+                    endpoint,
+                    response_type,
+                    body,
+                    additional_headers=additional_headers,
+                    attempts=attempts - 1,
+                    domain=domain,
+                    access_key=access_key,
+                )
+
+            raise
+
+        if response_type == object:
+            return response_data
+
+        return cast(T, deserialize.deserialize(response_type, response_data))
+
     def delete(
         self,
         endpoint: str,
         response_type: Type[T],
         *,
+        body: dict[str, Any] | None = None,
         additional_headers: dict[str, Any] | None = None,
         attempts: int = 3,
         domain: str = BASE_URL,
@@ -278,8 +347,9 @@ class HttpClient:
     ) -> T:
         """Perform a DELETE to the endpoint specified.
 
-        :param endpoint: The endpoint to perform the PUT to
+        :param endpoint: The endpoint to perform the DELETE to
         :param response_type: The type of item the response contains
+        :param body: An optional JSON-serialisable body to send with the request
         :param attempts: Number of attempts remaining to try this call
         :param additional_headers: Any additional headers to add to the call
         :param domain: Override the domain to something else
@@ -301,7 +371,7 @@ class HttpClient:
         if additional_headers:
             headers |= additional_headers
 
-        raw_response = requests.delete(url, headers=headers, timeout=10)
+        raw_response = requests.delete(url, json=body, headers=headers, timeout=10)
 
         try:
             response_data = self.extract_data(raw_response)
@@ -310,6 +380,7 @@ class HttpClient:
                 return self.delete(
                     endpoint,
                     response_type,
+                    body=body,
                     additional_headers=additional_headers,
                     attempts=attempts - 1,
                     domain=domain,

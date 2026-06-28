@@ -46,6 +46,35 @@ for zone in client.pull_zones.get_all():
     print(zone.name)
 ```
 
+#### Provisioning a pull zone
+
+The pull zone client can also create and configure zones:
+
+```python
+pull_zones = client.get_pull_zone_client()
+
+zone = pull_zones.get_by_name("my-zone") or pull_zones.create(
+    name="my-zone",
+    origin_url="https://origin.example.com",
+)
+
+# Apply settings using bunny.net's PascalCase field names. -1 on
+# CacheControlMaxAgeOverride tells bunny.net to respect the origin's
+# Cache-Control headers.
+pull_zones.update(zone.identifier, {
+    "IgnoreQueryStrings": False,
+    "EnableQueryStringOrdering": True,
+    "CacheControlMaxAgeOverride": -1,
+})
+
+# Attach a custom hostname, issue a free Let's Encrypt certificate and force
+# HTTPS. The hostname's CNAME must resolve to <zone>.b-cdn.net before the
+# certificate can be issued.
+pull_zones.add_hostname(zone.identifier, "cdn.example.com")
+pull_zones.load_free_certificate("cdn.example.com")
+pull_zones.set_force_ssl(zone.identifier, "cdn.example.com", force=True)
+```
+
 ### Signed URLs
 
 ```python

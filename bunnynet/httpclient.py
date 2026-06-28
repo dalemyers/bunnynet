@@ -78,7 +78,12 @@ class HttpClient:
 
         if not raw_response.ok:
             if attempts > 1 and (raw_response.status_code >= 500):
-                return self.get_raw(endpoint, attempts=attempts - 1)
+                return self.get_raw(
+                    endpoint,
+                    attempts=attempts - 1,
+                    domain=domain,
+                    access_key=access_key,
+                )
 
             raise BunnyHTTPException.generate_from_response(raw_response, "Failed to get data")
 
@@ -120,7 +125,13 @@ class HttpClient:
             response_data = self.extract_data(raw_response)
         except BunnyHTTPException as ex:
             if attempts > 1 and (ex.response.status_code >= 500):
-                return self.get(endpoint, response_type, attempts=attempts - 1)
+                return self.get(
+                    endpoint,
+                    response_type,
+                    attempts=attempts - 1,
+                    domain=domain,
+                    access_key=access_key,
+                )
 
             raise
 
@@ -165,7 +176,15 @@ class HttpClient:
             response_data = self.extract_data(raw_response)
         except BunnyHTTPException as ex:
             if attempts > 1 and (ex.response.status_code >= 500):
-                yield from self.get_list(endpoint, response_type, page=page, attempts=attempts - 1)
+                yield from self.get_list(
+                    endpoint,
+                    response_type,
+                    page=page,
+                    attempts=attempts - 1,
+                    parameters=parameters,
+                    domain=domain,
+                    access_key=access_key,
+                )
                 return
 
             raise
@@ -177,9 +196,15 @@ class HttpClient:
         else:
             yield deserialized_data
 
-        # TODO
         if isinstance(response_data, dict) and response_data.get("HasMoreItems"):
-            yield from self.get_list(endpoint, response_type, page=page + 1)
+            yield from self.get_list(
+                endpoint,
+                response_type,
+                page=page + 1,
+                parameters=parameters,
+                domain=domain,
+                access_key=access_key,
+            )
 
     def put(
         self,
@@ -224,7 +249,15 @@ class HttpClient:
             response_data = self.extract_data(raw_response)
         except BunnyHTTPException as ex:
             if attempts > 1 and (ex.response.status_code >= 500):
-                return self.get(endpoint, response_type, attempts=attempts - 1)
+                return self.put(
+                    endpoint,
+                    response_type,
+                    body,
+                    additional_headers=additional_headers,
+                    attempts=attempts - 1,
+                    domain=domain,
+                    access_key=access_key,
+                )
 
             raise
 
@@ -274,7 +307,14 @@ class HttpClient:
             response_data = self.extract_data(raw_response)
         except BunnyHTTPException as ex:
             if attempts > 1 and (ex.response.status_code >= 500):
-                return self.get(endpoint, response_type, attempts=attempts - 1)
+                return self.delete(
+                    endpoint,
+                    response_type,
+                    additional_headers=additional_headers,
+                    attempts=attempts - 1,
+                    domain=domain,
+                    access_key=access_key,
+                )
 
             raise
 

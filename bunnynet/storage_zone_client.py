@@ -3,7 +3,7 @@
 import logging
 from typing import Iterator
 
-from bunnynet.exceptions import BunnyException
+from bunnynet.exceptions import BunnyException, BunnyHTTPNotFoundException
 from bunnynet.hashing import sha256 as SHA256
 from bunnynet.httpclient import HttpClient
 from bunnynet.models import StorageObject, StorageZone
@@ -40,7 +40,7 @@ class StorageZoneClient:
         parameters = {}
 
         if include_deleted:
-            parameters["includeDeleted"] = True
+            parameters["includeDeleted"] = "true"
 
         yield from self.http_client.get_list("storagezone", StorageZone, parameters=parameters)
 
@@ -51,7 +51,10 @@ class StorageZoneClient:
 
         :returns: The zone if found, None otherwise.
         """
-        return self.http_client.get(f"storagezone/{identifier}", StorageZone)
+        try:
+            return self.http_client.get(f"storagezone/{identifier}", StorageZone)
+        except BunnyHTTPNotFoundException:
+            return None
 
     def get_by_name(self, name: str) -> StorageZone | None:
         """Get a zone by its name.

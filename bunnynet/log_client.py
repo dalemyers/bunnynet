@@ -1,14 +1,9 @@
-"""Wrapper around the bunny.net storage zone APIs."""
+"""Wrapper around the bunny.net log APIs."""
 
 import datetime
 import logging
-from typing import Iterator
 
-from bunnynet.exceptions import BunnyException
-from bunnynet.hashing import sha256 as SHA256
 from bunnynet.httpclient import HttpClient
-from bunnynet.models import StorageObject, StorageZone
-from bunnynet.storage_endpoints import StorageEndpoint
 
 
 class LogClient:
@@ -46,6 +41,8 @@ class LogClient:
         :param pull_zone_id: The identifier of the pull zone to get the logs for
         :param date: The date to get the logs for
         :param status_codes: Only get the logs matching these status codes
+        :param start_index: The index of the first log line to return
+        :param end_index: The index of the last log line to return
 
         :returns: The logs for the given date
         """

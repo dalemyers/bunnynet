@@ -3,6 +3,7 @@
 import logging
 from typing import Iterator
 
+from bunnynet.exceptions import BunnyHTTPNotFoundException
 from bunnynet.httpclient import HttpClient
 from bunnynet.models import PullZone
 
@@ -37,9 +38,9 @@ class PullZoneClient:
         parameters = {}
 
         if include_certificate:
-            parameters["includeCertificate"] = True
+            parameters["includeCertificate"] = "true"
 
-        yield from self.http_client.get_list("pullzone", PullZone)
+        yield from self.http_client.get_list("pullzone", PullZone, parameters=parameters)
 
     def get(self, identifier: int) -> PullZone | None:
         """Get a zone by its identifier.
@@ -48,7 +49,10 @@ class PullZoneClient:
 
         :returns: The zone if found, None otherwise.
         """
-        return self.http_client.get(f"pullzone/{identifier}", PullZone)
+        try:
+            return self.http_client.get(f"pullzone/{identifier}", PullZone)
+        except BunnyHTTPNotFoundException:
+            return None
 
     def get_by_name(self, name: str) -> PullZone | None:
         """Get a zone by its name.

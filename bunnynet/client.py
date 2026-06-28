@@ -94,7 +94,7 @@ class BunnyClient:
         :returns: The signature data which can be added to a URL later
         """
         parsed_url = urllib.parse.urlparse(url)
-        parameters: dict[str, Any] = urllib.parse.parse_qs(parsed_url.query)
+        parameters: dict[str, str] = dict(urllib.parse.parse_qsl(parsed_url.query))
 
         if path:
             signature_path = path
@@ -108,16 +108,17 @@ class BunnyClient:
         if token_countries_blocked:
             parameters["token_countries_blocked"] = ",".join(token_countries_blocked)
 
-        parameter_data = "&".join([name + "=" + "".join(value) for name, value in parameters.items()])
+        # bunny.net requires the parameters to be sorted alphabetically by key when
+        # building the value that gets hashed. If they aren't sorted, the token we
+        # generate won't match the one bunny.net computes and the URL will be rejected.
+        parameter_data = "&".join(f"{name}={parameters[name]}" for name in sorted(parameters))
 
         hashable_base = key + signature_path + str(int(expiration.timestamp())) + parameter_data
-        token_bytes = base64.b64encode(hashlib.sha256(str.encode(hashable_base)).digest())
+        token_bytes = base64.b64encode(hashlib.sha256(hashable_base.encode()).digest())
         token = token_bytes.decode().replace("\n", "").replace("+", "-").replace("/", "_").replace("=", "")
 
-        result = {"token": token, "expires": int(expiration.timestamp())}
-
-        for name, value in parameters.items():
-            result[name] = value
+        result: dict[str, Any] = {"token": token, "expires": int(expiration.timestamp())}
+        result.update(parameters)
 
         return result
 

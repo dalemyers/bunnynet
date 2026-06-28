@@ -14,7 +14,11 @@ import bunnynet  # pylint: disable=wrong-import-order
 
 dotenv.load_dotenv()
 
-TOKEN = os.environ["BUNNY_TOKEN"]
+TOKEN = os.environ.get("BUNNY_TOKEN")
+
+# These tests hit the live bunny.net API. Skip the whole module when no token is
+# configured so the suite (and the offline unit tests) can still run in CI.
+pytestmark = pytest.mark.skipif(TOKEN is None, reason="BUNNY_TOKEN is not set")
 
 # pylint: disable=redefined-outer-name,missing-param-doc
 
@@ -25,6 +29,7 @@ def client() -> bunnynet.BunnyClient:
 
     :returns: A new client
     """
+    assert TOKEN is not None
     return bunnynet.BunnyClient(TOKEN)
 
 

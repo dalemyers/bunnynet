@@ -19,16 +19,24 @@ class HttpClient:
 
     _token: str
     log: logging.Logger
+    timeout: float
 
     def __init__(
         self,
         token: str,
         *,
         log: logging.Logger,
+        timeout: float = 10,
     ) -> None:
-        """Construct a new client object."""
+        """Construct a new client object.
+
+        :param token: The API token to use.
+        :param log: The logger to use for debugging.
+        :param timeout: The timeout (in seconds) to apply to each HTTP request.
+        """
         self.log = log.getChild("http")
         self._token = token
+        self.timeout = timeout
 
     def extract_data(self, response: requests.Response) -> Any:
         """Validate a response from the API and extract the data
@@ -58,6 +66,7 @@ class HttpClient:
         attempts: int = 3,
         domain: str = BASE_URL,
         access_key: str | None = None,
+        timeout: float | None = None,
     ) -> bytes:
         """Perform a GET to the endpoint specified.
 
@@ -65,6 +74,7 @@ class HttpClient:
         :param attempts: Number of attempts remaining to try this call
         :param domain: Override the domain to something else
         :param access_key: The access key to use instead of the default
+        :param timeout: Override the client's default request timeout (in seconds)
 
         :raises BunnyHTTPException: If something goes wrong in a call
 
@@ -78,7 +88,7 @@ class HttpClient:
             headers={
                 "AccessKey": access_key or self._token,
             },
-            timeout=10,
+            timeout=self.timeout if timeout is None else timeout,
         )
 
         if not raw_response.ok:
@@ -88,6 +98,7 @@ class HttpClient:
                     attempts=attempts - 1,
                     domain=domain,
                     access_key=access_key,
+                    timeout=timeout,
                 )
 
             raise BunnyHTTPException.generate_from_response(raw_response, "Failed to get data")
@@ -123,7 +134,7 @@ class HttpClient:
             headers={
                 "AccessKey": access_key or self._token,
             },
-            timeout=10,
+            timeout=self.timeout,
         )
 
         try:
@@ -175,7 +186,7 @@ class HttpClient:
         if params:
             url += "&" + params
 
-        raw_response = requests.get(url, headers={"AccessKey": access_key or self._token}, timeout=10)
+        raw_response = requests.get(url, headers={"AccessKey": access_key or self._token}, timeout=self.timeout)
 
         try:
             response_data = self.extract_data(raw_response)
@@ -248,7 +259,7 @@ class HttpClient:
         if additional_headers:
             headers |= additional_headers
 
-        raw_response = requests.put(url, data=body, headers=headers, timeout=10)
+        raw_response = requests.put(url, data=body, headers=headers, timeout=self.timeout)
 
         try:
             response_data = self.extract_data(raw_response)
@@ -311,7 +322,7 @@ class HttpClient:
         if additional_headers:
             headers |= additional_headers
 
-        raw_response = requests.post(url, json=body, headers=headers, timeout=10)
+        raw_response = requests.post(url, json=body, headers=headers, timeout=self.timeout)
 
         try:
             response_data = self.extract_data(raw_response)
@@ -371,7 +382,7 @@ class HttpClient:
         if additional_headers:
             headers |= additional_headers
 
-        raw_response = requests.delete(url, json=body, headers=headers, timeout=10)
+        raw_response = requests.delete(url, json=body, headers=headers, timeout=self.timeout)
 
         try:
             response_data = self.extract_data(raw_response)

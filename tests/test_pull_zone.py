@@ -109,6 +109,52 @@ def test_extract_data_tolerates_empty_body() -> None:
     response.json.assert_not_called()
 
 
+def test_default_timeout_is_used() -> None:
+    """Requests use the client's default timeout when none is configured."""
+    client = _http_client()
+
+    with mock.patch("bunnynet.httpclient.requests") as requests_mock:
+        requests_mock.get.return_value = _response(content=b"data")
+
+        client.get_raw("purge")
+
+    _, kwargs = requests_mock.get.call_args
+    assert kwargs["timeout"] == 10
+
+
+def test_configured_timeout_is_used() -> None:
+    """A timeout configured on the client is applied to requests."""
+    client = HttpClient("the-token", log=logging.getLogger("test"), timeout=42)
+
+    with mock.patch("bunnynet.httpclient.requests") as requests_mock:
+        requests_mock.post.return_value = _response(content=b"")
+
+        client.post("pullzone", object, {"Name": "zone"})
+
+    _, kwargs = requests_mock.post.call_args
+    assert kwargs["timeout"] == 42
+
+
+def test_get_raw_timeout_override() -> None:
+    """A per-call timeout overrides the client default on get_raw."""
+    client = HttpClient("the-token", log=logging.getLogger("test"), timeout=10)
+
+    with mock.patch("bunnynet.httpclient.requests") as requests_mock:
+        requests_mock.get.return_value = _response(content=b"data")
+
+        client.get_raw("pullzone/loadFreeCertificate?hostname=cdn.example.com", timeout=60)
+
+    _, kwargs = requests_mock.get.call_args
+    assert kwargs["timeout"] == 60
+
+
+def test_bunny_client_timeout_propagates() -> None:
+    """BunnyClient forwards its timeout to the underlying HTTP client."""
+    bunny = bunnynet.BunnyClient("token", timeout=25)
+
+    assert bunny._http_client.timeout == 25  # pylint: disable=protected-access
+
+
 def _pull_zone_client() -> tuple[PullZoneClient, mock.Mock]:
     http_client = mock.Mock()
     client = PullZoneClient(http_client=http_client, log=logging.getLogger("test"))
@@ -161,12 +207,21 @@ def test_remove_hostname_deletes_with_body() -> None:
 
 
 def test_load_free_certificate_builds_endpoint() -> None:
-    """load_free_certificate URL-encodes the hostname into the query string."""
+    """load_free_certificate URL-encodes the hostname and uses a longer timeout."""
     client, http_client = _pull_zone_client()
 
     client.load_free_certificate("cdn.example.com")
 
-    http_client.get_raw.assert_called_once_with("pullzone/loadFreeCertificate?hostname=cdn.example.com")
+    http_client.get_raw.assert_called_once_with("pullzone/loadFreeCertificate?hostname=cdn.example.com", timeout=60)
+
+
+def test_load_free_certificate_timeout_override() -> None:
+    """The certificate timeout can be overridden by the caller."""
+    client, http_client = _pull_zone_client()
+
+    client.load_free_certificate("cdn.example.com", timeout=120)
+
+    http_client.get_raw.assert_called_once_with("pullzone/loadFreeCertificate?hostname=cdn.example.com", timeout=120)
 
 
 def test_set_force_ssl_posts_expected_body() -> None:

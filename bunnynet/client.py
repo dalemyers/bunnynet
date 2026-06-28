@@ -28,11 +28,13 @@ class BunnyClient:
         token: str,
         *,
         log: logging.Logger | None = None,
+        timeout: float = 10,
     ) -> None:
         """Construct a new client object.
 
         :param token: The API token to use.
         :param log: Any base logger to be used (one will be created if not supplied)
+        :param timeout: The timeout (in seconds) to apply to each HTTP request.
         """
 
         if log is not None:
@@ -40,7 +42,7 @@ class BunnyClient:
         else:
             self.log = logging.getLogger("bunnynet")
 
-        self._http_client = HttpClient(token, log=self.log)
+        self._http_client = HttpClient(token, log=self.log, timeout=timeout)
 
         self.pull_zones = PullZoneClient(http_client=self._http_client, log=self.log)
         self.storage_zones = StorageZoneClient(
@@ -50,11 +52,12 @@ class BunnyClient:
         self.logs = LogClient(http_client=self._http_client, log=self.log)
 
     @staticmethod
-    def get_storage_zone_client(token: str, log: logging.Logger) -> StorageZoneClient:
+    def get_storage_zone_client(token: str, log: logging.Logger, *, timeout: float = 10) -> StorageZoneClient:
         """Get a storage zone client directly.
 
         :param token: The API token for auth
         :param log: The logger to use for debugging
+        :param timeout: The timeout (in seconds) to apply to each HTTP request.
 
         :returns: A new storage zone client.
         """
@@ -64,7 +67,7 @@ class BunnyClient:
         else:
             log = logging.getLogger("bunnynet")
 
-        http_client = HttpClient(token, log=log)
+        http_client = HttpClient(token, log=log, timeout=timeout)
 
         return StorageZoneClient(http_client=http_client, log=log)
 

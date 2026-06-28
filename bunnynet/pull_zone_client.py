@@ -111,7 +111,7 @@ class PullZoneClient:
             additional_headers={"Content-Type": "application/json"},
         )
 
-    def load_free_certificate(self, hostname: str) -> None:
+    def load_free_certificate(self, hostname: str, *, timeout: float = 60) -> None:
         """Provision a free Let's Encrypt certificate for an attached hostname.
 
         The hostname's CNAME (``hostname -> <pullzone>.b-cdn.net``) must resolve
@@ -119,8 +119,13 @@ class PullZoneClient:
         that CNAME.
 
         :param hostname: The hostname to issue the certificate for
+        :param timeout: The request timeout (in seconds). Certificate issuance can
+                        be slow, so this defaults higher than the usual client timeout.
         """
-        self.http_client.get_raw("pullzone/loadFreeCertificate?hostname=" + urllib.parse.quote(hostname))
+        self.http_client.get_raw(
+            "pullzone/loadFreeCertificate?hostname=" + urllib.parse.quote(hostname),
+            timeout=timeout,
+        )
 
     def set_force_ssl(self, identifier: int, hostname: str, *, force: bool = True) -> None:
         """Force HTTP requests to redirect to HTTPS for a hostname.

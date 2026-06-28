@@ -18,6 +18,13 @@ import bunnynet
 client = bunnynet.BunnyClient("your-api-token")
 ```
 
+Every request uses a default timeout of 10 seconds. Override it for all
+requests by passing `timeout` (in seconds):
+
+```python
+client = bunnynet.BunnyClient("your-api-token", timeout=30)
+```
+
 ### Storage zones
 
 ```python
